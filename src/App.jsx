@@ -31,35 +31,38 @@ function App() {
   };
 
   useEffect(() => {
-    const getImages = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetchImages(query, page);
-        if (response) {
-          setTotalImages(response.total);
-          if (response.results.length === 0) {
-            setError("No results found");
+    if (query) {
+      setIsLoading(true);
+      const getImages = async () => {
+        try {
+          const response = await fetchImages(query, page);
+          if (response) {
+            setTotalImages(response.total);
+            if (response.results.length === 0) {
+              setError("No results found");
+            } else {
+              setImages((prev) => [...prev, ...response.results]);
+              setError("");
+            }
           } else {
-            setImages((prev) => [...prev, ...response.results]);
-            setError("");
+            setError(true);
           }
-        } else {
+        } catch (error) {
+          console.log(error);
           setError(true);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.log(error);
-        setError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    getImages();
+      };
+      getImages();
+    }
   }, [query, page]);
 
   const handleSubmit = (newQuery) => {
     if (newQuery === query) {
       return;
     }
+    setIsLoading(true);
     setImages([]);
     setQuery(newQuery);
     setPage(1);
