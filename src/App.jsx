@@ -14,10 +14,11 @@ function App() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [tapImage, setTapImage] = useState(null);
   const [totalImages, setTotalImages] = useState(0);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const openModal = (imageUrl) => {
     setTapImage(imageUrl);
@@ -34,20 +35,35 @@ function App() {
       try {
         setIsLoading(true);
         const response = await fetchImages(query, page);
-        setImages((prev) => [...prev, ...response.results]);
-        setTotalImages(response.total);
-        setIsLoading(false);
+        if (response) {
+          setTotalImages(response.total);
+          if (response.results.length === 0) {
+            setError("No results found");
+          } else {
+            setImages((prev) => [...prev, ...response.results]);
+            setError("");
+          }
+        } else {
+          setError(true);
+        }
       } catch (error) {
         console.log(error);
         setError(true);
+      } finally {
+        setIsLoading(false);
       }
     };
     getImages();
   }, [query, page]);
 
   const handleSubmit = (newQuery) => {
+    if (newQuery === query) {
+      return;
+    }
     setImages([]);
     setQuery(newQuery);
+    setPage(1);
+    setIsSubmitted(true);
   };
 
   const handleLoadMore = () => {
@@ -55,14 +71,13 @@ function App() {
   };
 
   return (
-    <div className="conrainer">
+    <div className="container">
       <SearchBar onSubmit={handleSubmit} />
-
       <ImageGallery images={images} openModal={openModal} />
-      {error && <ErrorMessage />}
+      {isSubmitted && error && !isLoading && <ErrorMessage message={error} />}
       <ImageModal isOpen={isOpen} closeModal={closeModal} imageUrl={tapImage} />
       {isLoading && !error && <Loader />}
-      {!isLoading && images.length < totalImages && (
+      {!isLoading && !error && images.length < totalImages && (
         <LoadMoreBtn onLoadMore={handleLoadMore} />
       )}
     </div>
